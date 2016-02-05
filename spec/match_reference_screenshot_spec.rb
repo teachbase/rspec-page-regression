@@ -50,13 +50,23 @@ describe 'match_reference_screenshot' do
       Then { expect(@error).to be_nil }
     end
 
-    context "when files do not match" do
+    context "when files do not match with Base mode" do
       Given { use_test_screenshot "A" }
       Given { use_reference_screenshot "B" }
       Then { expect(@error).to_not be_nil }
       Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
       Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
       Then { expect(difference_path.read).to eq fixture_screenshot("ABdiff").read }
+    end
+
+    context "when files do not match with Delta mode" do
+      Given { use_test_screenshot "delta_b" }
+      Given { use_reference_screenshot "delta_a" }
+      Given { @args  = { mode: :delta_e } }
+      Then { expect(@error).to_not be_nil }
+      Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+      Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+      Then { expect(difference_path.read).to eq fixture_screenshot("delta_diff").read }
     end
 
     context "when difference threshold is set" do

@@ -5,84 +5,91 @@ else
 end
 
 module RSpec::PageRegression
-
-  class ImageComparison
-    include ChunkyPNG::Color
-
-    attr_reader :result
-    attr_reader :filepaths
-
-    def initialize(filepaths)
-      @filepaths = filepaths
-      @result = compare
-    end
-
-    def expected_size
-      [@iexpected.width , @iexpected.height]
-    end
-
-    def test_size
-      [@itest.width , @itest.height]
-    end
-
-    private
-
-    def compare
-      @filepaths.difference_image.unlink if @filepaths.difference_image.exist?
-
-      return :missing_reference_screenshot unless @filepaths.reference_screenshot.exist?
-      return :missing_test_screenshot unless @filepaths.test_screenshot.exist?
-
-      @iexpected = ChunkyPNG::Image.from_file(@filepaths.reference_screenshot)
-      @itest = ChunkyPNG::Image.from_file(@filepaths.test_screenshot)
-
-      return :size_mismatch if test_size != expected_size
-
-      return :match if pixels_match?
-
-      create_difference_image
-      return :difference
-    end
-
-    def pixels_match?
-      max_count = RSpec::PageRegression.threshold * @itest.width * @itest.height
-      count = 0
-      @itest.height.times do |y|
-        next if @itest.row(y) == @iexpected.row(y)
-        diff = @itest.row(y).zip(@iexpected.row(y)).select { |x, y| x != y }
-        count += diff.count
-        return false if count > max_count
-      end
-      return true
-    end
-
-    def create_difference_image
-      idiff = ChunkyPNG::Image.from_file(@filepaths.reference_screenshot)
-      xmin = @itest.width + 1
-      xmax = -1
-      ymin = @itest.height + 1
-      ymax = -1
-      @itest.height.times do |y|
-        @itest.row(y).each_with_index do |test_pixel, x|
-          idiff[x,y] = if test_pixel != (expected_pixel = idiff[x,y])
-                         xmin = x if x < xmin
-                         xmax = x if x > xmax
-                         ymin = y if y < ymin
-                         ymax = y if y > ymax
-                         rgb(
-                           (r(test_pixel) - r(expected_pixel)).abs,
-                           (g(test_pixel) - g(expected_pixel)).abs,
-                           (b(test_pixel) - b(expected_pixel)).abs
-                         )
-                       else
-                         rgb(0,0,0)
-                       end
+  module ImageComparison
+    class Base
+      class Image < ChunkyPNG::Image
+        def each_pixel
+          height.times do |y|
+            row(y).each_with_index do |pixel, x|
+              yield(pixel, x, y)
+            end
+          end
         end
       end
 
-      idiff.rect(xmin-1,ymin-1,xmax+1,ymax+1,rgb(255,0,0))
+      include ChunkyPNG::Color
 
-      idiff.save @filepaths.difference_image
+      attr_reader :result, :filepaths
+
+      def initialize(filepaths)
+        @filepaths = filepaths
+        @result = compare
+      end
+
+      def expected_size
+        [@expected.width , @expected.height]
+      end
+
+      def test_size
+        [@test.width , @test.height]
+      end
+
+      private
+
+      def compare
+        @filepaths.difference_image.unlink if @filepaths.difference_image.exist?
+
+        return :missing_reference_screenshot unless @filepaths.reference_screenshot.exist?
+        return :missing_test_screenshot unless @filepaths.test_screenshot.exist?
+
+        @expected = Image.from_file(@filepaths.reference_screenshot)
+        @test = Image.from_file(@filepaths.test_screenshot)
+
+        return :size_mismatch if test_size != expected_size
+
+        analyze_images
+
+        return :match if (@mismatch_count / @expected.pixels.length) <= RSpec::PageRegression.threshold
+
+        create_diff_image
+        return :difference
+      end
+
+      def analyze_images
+        @diff = Image.new(@expected.width, @expected.height, BLACK)
+        @xmin = @test.width + 1
+        @xmax = -1
+        @ymin = @test.height + 1
+        @ymax = -1
+        @mismatch_count = 0.0
+        @test.each_pixel do |test_pixel, x, y|
+          expected_pixel = @expected[x, y]
+          next if test_pixel == expected_pixel
+          udpate_bounds(x, y)
+          @mismatch_count += 1
+          analyze_pixels(expected_pixel, test_pixel, x, y)
+        end
+      end
+
+      def analyze_pixels(a, b, x, y)
+        @diff[x,y] = rgb(
+                       (r(a) - r(b)).abs,
+                       (g(a) - g(b)).abs,
+                       (b(a) - b(b)).abs
+                     )
+      end
+
+      def create_diff_image
+        @diff.rect(@xmin - 1, @ymin - 1, @xmax + 1, @ymax + 1, rgb(255,0,0))
+        @diff.save @filepaths.difference_image
+      end
+
+      def udpate_bounds(x, y)
+        @xmin = x if x < @xmin
+        @xmax = x if x > @xmax
+        @ymin = y if y < @ymin
+        @ymax = y if y > @ymax
+      end
     end
   end
 end

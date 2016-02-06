@@ -95,6 +95,18 @@ describe 'match_reference_screenshot' do
         Then { expect(@error).to be_nil }
       end
 
+      context "threshold is configured above image difference in Delta mode" do
+        Given do
+          RSpec::PageRegression.configure do |config|
+            config.threshold = 0.06
+          end
+        end
+        Given { use_test_screenshot "delta_a" }
+        Given { use_reference_screenshot "delta_b" }
+        Given { @args = { mode: :delta_e} }
+        Then { expect(@error).to be_nil }
+      end
+
       after :each do
         RSpec::PageRegression.class_variable_set :@@threshold, nil
       end

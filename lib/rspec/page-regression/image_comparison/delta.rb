@@ -12,7 +12,7 @@ module RSpec::PageRegression
       end
 
       def background
-        @score = 0.0
+        @score = 0.0 # If I try to define it in #initialyze it isn't works. So...
         Image.new(@expected.width, @expected.height, WHITE)
       end
 

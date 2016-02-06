@@ -58,7 +58,7 @@ module RSpec::PageRegression
         @mismatch_count = 0.0
         @test.each_pixel do |test_pixel, x, y|
           expected_pixel = @expected[x, y]
-          next if test_pixel == expected_pixel
+          next if pixels_equal?(test_pixel, expected_pixel)
           udpate_bounds(x, y)
           @mismatch_count += 1
           analyze_pixels(expected_pixel, test_pixel, x, y)
@@ -91,6 +91,10 @@ module RSpec::PageRegression
 
       def score
         (@mismatch_count / @expected.pixels.length)
+      end
+
+      def pixels_equal?(a, b)
+        a == b
       end
     end
   end

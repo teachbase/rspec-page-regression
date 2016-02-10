@@ -1,7 +1,17 @@
 module RSpec::PageRegression
 	module ImageComparison
+    module ColorMethods
+      include ChunkyPNG::Color
+
+      def brightness(a)
+        0.3 * r(a) + 0.59 * g(a) + 0.11 * b(a)
+      end
+    end
+
 	  class Base
       class Image < ChunkyPNG::Image
+        include RSpec::PageRegression::ImageComparison::ColorMethods
+
         def each_pixel
           height.times do |y|
             row(y).each_with_index do |pixel, x|
@@ -9,9 +19,23 @@ module RSpec::PageRegression
             end
           end
         end
+
+        def to_grayscale
+          each_pixel do |test_pixel, x, y|
+            self[x, y] = grayscale(brightness(test_pixel).round)
+          end
+          self
+        end
+
+        def with_alpha(value)
+          each_pixel do |test_pixel, x, y|
+            self[x, y] = rgba(r(test_pixel), g(test_pixel), b(test_pixel), value)
+          end
+          self
+        end
       end
 
-      include ChunkyPNG::Color
+      include RSpec::PageRegression::ImageComparison::ColorMethods
 
       attr_reader :result, :filepaths
 

@@ -50,23 +50,35 @@ describe 'match_reference_screenshot' do
       Then { expect(@error).to be_nil }
     end
 
-    context "when files do not match with Base mode" do
-      Given { use_test_screenshot "A" }
-      Given { use_reference_screenshot "B" }
-      Then { expect(@error).to_not be_nil }
-      Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
-      Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
-      Then { expect(difference_path.read).to eq fixture_screenshot("ABdiff").read }
-    end
+    context "when files do not match" do
+      context "with Base mode" do
+        Given { use_test_screenshot "A" }
+        Given { use_reference_screenshot "B" }
+        Then { expect(@error).to_not be_nil }
+        Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+        Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+        Then { expect(difference_path.read).to eq fixture_screenshot("ABdiff").read }
+      end
 
-    context "when files do not match with Delta mode" do
-      Given { use_test_screenshot "delta_b" }
-      Given { use_reference_screenshot "delta_a" }
-      Given { @args  = { mode: :delta_e } }
-      Then { expect(@error).to_not be_nil }
-      Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
-      Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
-      Then { expect(difference_path.read).to eq fixture_screenshot("delta_diff").read }
+      context "with Delta mode" do
+        Given { use_test_screenshot "delta_b" }
+        Given { use_reference_screenshot "delta_a" }
+        Given { @args  = { mode: :delta_e } }
+        Then { expect(@error).to_not be_nil }
+        Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+        Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+        Then { expect(difference_path.read).to eq fixture_screenshot("delta_diff").read }
+      end
+
+      context "with Grayscale mode" do
+        Given { use_test_screenshot "grayscale_a" }
+        Given { use_reference_screenshot "grayscale_b" }
+        Given { @args  = { mode: :grayscale } }
+        Then { expect(@error).to_not be_nil }
+        Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+        Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+        Then { expect(difference_path.read).to eq fixture_screenshot("grayscale_diff").read }
+      end
     end
 
     context "when difference threshold is set" do
@@ -95,7 +107,7 @@ describe 'match_reference_screenshot' do
         Then { expect(@error).to be_nil }
       end
 
-      context "threshold is configured above image difference in Delta mode" do
+      context "when files match only with Delta mode" do
         Given do
           RSpec::PageRegression.configure do |config|
             config.threshold = 0.06
@@ -103,8 +115,56 @@ describe 'match_reference_screenshot' do
         end
         Given { use_test_screenshot "delta_a" }
         Given { use_reference_screenshot "delta_b" }
-        Given { @args = { mode: :delta_e} }
-        Then { expect(@error).to be_nil }
+
+        context "Base" do
+          Then { expect(@error).to_not be_nil }
+          Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+          Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+          Then { expect(difference_path.read).to eq fixture_screenshot("base_delta_diff").read }
+        end
+
+        context "Grayscale" do
+          Given { @args = { mode: :grayscale } }
+          Then { expect(@error).to_not be_nil }
+          Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+          Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+          Then { expect(difference_path.read).to eq fixture_screenshot("grayscale_delta_diff").read }
+        end
+
+        context "Delta" do
+          Given { @args = { mode: :delta_e } }
+          Then { expect(@error).to be_nil }
+        end
+      end
+
+      context "when files match only with Grayscale mode" do
+        Given do
+          RSpec::PageRegression.configure do |config|
+            config.threshold = 0.01
+          end
+        end
+        Given { use_test_screenshot "grayscale_a" }
+        Given { use_reference_screenshot "grayscale_b" }
+
+        context "Base" do
+          Then { expect(@error).to_not be_nil }
+          Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+          Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+          Then { expect(difference_path.read).to eq fixture_screenshot("base_grayscale_diff").read }
+        end
+
+        context "Grayscale" do
+          Given { @args = { mode: :grayscale } }
+          Then { expect(@error).to be_nil }
+        end
+
+        context "Delta" do
+          Given { @args = { mode: :delta_e} }
+          Then { expect(@error).to_not be_nil }
+          Then { expect(@error.message).to include "Test screenshot does not match reference screenshot" }
+          Then { expect(@error.message).to match viewer_pattern(test_path, reference_screenshot_path, difference_path) }
+          Then { expect(difference_path.read).to eq fixture_screenshot("delta_grayscale_diff").read }
+        end
       end
 
       after :each do

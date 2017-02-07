@@ -1,5 +1,15 @@
 sudo: false
-rvm:
-  - 2.2.0
-  - jruby-head
+
+before_install:
+  - gem install bundler
+
 script: bundle exec rake spec_with_coveralls
+
+matrix:
+  include:
+    - rvm: 2.3.0
+      gemfile: Gemfile
+    - rvm: 2.4.0
+      gemfile: Gemfile
+    - rvm: jruby-head
+      gemfile: gemfiles/jruby.gemfile

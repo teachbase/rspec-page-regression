@@ -153,7 +153,11 @@ Then you will have two different files "test-one.png" and "test-two.png" (and sa
 
 ### Other options
 
-This gem uses [Imatcher](https://github.com/teachbase/imatcher) and you can use all its options in `match_reference_screenshot`
+This gem uses [Imatcher](https://github.com/teachbase/imatcher) and you can use its options in `match_reference_screenshot`, for example:
+
+```ruby
+    expect(page).to match_reference_screenshot(threshold: 0.8, mode: :grayscale)
+```
 
 ### How do I create reference screenshots?
 

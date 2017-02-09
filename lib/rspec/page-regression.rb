@@ -7,7 +7,7 @@ require 'rspec/page-regression/viewport'
 
 module RSpec::PageRegression
   RENDER_ARGS = [:selector, :full]
-  IMATCHER_ARGS = [:threshold, :mode, :include_rect, :exclude_rect]
+  IMATCHER_ARGS = [:threshold, :mode, :tolerance, :include_rect, :exclude_rect]
   ALLOWED_ARGS = [:viewport, :except_viewport, :label] + RENDER_ARGS + IMATCHER_ARGS
 
   def self.configure

@@ -13,7 +13,7 @@ module RSpec::PageRegression
       compare_options = {}
       compare_options[:threshold] = args.fetch(:threshold, RSpec::PageRegression.threshold)
       compare_options[:mode] = args.fetch(:mode, RSpec::PageRegression.mode)
-      compare_options[:include_rect] = args.fetch(:include_area, nil)
+      compare_options[:include_rect] = args.fetch(:include_rect, nil)
       compare_options[:exclude_rect] = args.fetch(:exclude_rect, nil)
 
       Renderer.render_responsive(page, @responsive_filepaths, render_options)
